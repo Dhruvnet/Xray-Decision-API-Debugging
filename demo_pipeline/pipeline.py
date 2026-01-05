@@ -192,6 +192,9 @@ def run_pipeline(product):
         candidates = retrieve_candidates_large()
 
         s.log_metrics(count=len(candidates))
+        s.log_reasoning(
+            "Retrieved candidates via catalog search — logging top_k sample only"
+        )
 
         s.log_output(
             {
@@ -246,6 +249,12 @@ def run_pipeline(product):
             filtered_ratio=filtered_ratio,
         )
 
+        s.log_reasoning(
+            f"Filtered using price_tolerance={thresholds['price_tolerance']} "
+            f"and min_rating={thresholds['min_rating']} — "
+            f"kept {len(filtered)} / {len(candidates)} candidates"
+        )
+
         for c, reason in rejected[:25]:
             s.log_sample(c["id"], attributes=c, rejection_reason=reason)
 
@@ -265,6 +274,10 @@ def run_pipeline(product):
         s.log_metrics(approved_count=len(approved))
 
         s.log_output({"approved_ids": [c["id"] for c in approved]})
+
+        s.log_reasoning(
+            "LLM relevance scoring applied — candidates kept only if rel_score >= 0.50"
+        )
 
         for c in approved[:15]:
             s.log_sample(
