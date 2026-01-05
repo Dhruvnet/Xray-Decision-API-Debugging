@@ -92,30 +92,6 @@ def ingest_step(payload: StepIngestRequest):
     return {"status": "ok"}
 
 
-@app.post("/ingest/run/end")
-def end_run(payload: dict):
-    conn = get_conn()
-    cur = conn.cursor()
-
-    cur.execute(
-        """
-        UPDATE runs
-        SET outcome_summary = ?,
-            ended_at = ?
-        WHERE run_id = ?
-    """,
-        (
-            json.dumps(payload.get("outcome_summary") or {}),
-            payload.get("ended_at"),
-            payload.get("run_id"),
-        ),
-    )
-
-    conn.commit()
-    conn.close()
-    return {"status": "ok"}
-
-
 @app.get("/query/run/{run_id}")
 def get_run(run_id: str):
     conn = get_conn()
