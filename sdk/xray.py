@@ -24,14 +24,6 @@ class XRay:
         self.transport.post_sync("/ingest/run", payload)
         return run_id
 
-    # def end_run(self, run_id: str, outcome_summary=None):
-    #     payload = {
-    #         "run_id": run_id,
-    #         "outcome_summary": outcome_summary or {},
-    #         "ended_at": now_iso(),
-    #     }
-    #     self.transport.post_sync("/ingest/run/end", payload)
-
     def end_run(self, run_id: str, outcome_summary=None):
         payload = {
             "run_id": run_id,
