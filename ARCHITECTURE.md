@@ -24,7 +24,8 @@ X-Ray lets us trace exactly where the decision chain went bad.
 
 ## High-Level Architecture
 
-
+### System Architecture
+<img width="1144" height="1177" alt="xray_system" src="https://github.com/user-attachments/assets/0873a7a5-00c8-41f9-afe5-59df5bf9c3f3" />
 
 ### Components
 
@@ -74,11 +75,14 @@ Why store steps separately?
   (e.g., all `filter` failures)
 
 #### **Candidate Samples (optional)**
-Only persisted when useful.
+Some steps may process thousands of candidates.
+Full logging is expensive and unnecessary in most cases.
 
-Motivation:
-- Some steps handle **thousands of candidates**
-- Full logging becomes expensive
+Design choice:
+- sample where appropriate
+- store full data only when explicitly enabled
+This preserves explainability while avoiding storage explosion.
+The developer chooses the capture level.
 
 Design decision:
 > The **developer chooses** what to fully log vs sample.
@@ -100,7 +104,7 @@ All pipelines share a common abstraction:
 
 Examples of supported queries:
 
-- “Show all runs where filtering removed > 90% of candidates”
+- “Show all runs where filtering removed > 80% of candidates”
 - “Find failures where `failure_mode = llm_keyword_drift`”
 - “Across all systems, which step introduces most instability?”
 
@@ -116,8 +120,8 @@ A **phone case** was incorrectly selected for a **laptop stand**.
 ### Investigation Using X-Ray
 
 #### Step 1 — Inspect run
-GET /query/run/{run_id}
 
+```GET /query/run/{run_id}```
 We see:
 - keywords contained `"mobile stand"` → **keyword drift**
 - filter kept many mobile accessories
@@ -125,7 +129,6 @@ We see:
 
 #### Root Cause
 The LLM-like generator introduced **semantic drift**.
-
 #### Evidence in data
 - `keyword_mode = semantic_drift`
 - `failure_mode = llm_keyword_drift`
@@ -138,17 +141,15 @@ No guesswork. Problem isolated immediately.
 ## Query API — Examples
 
 ### Over-aggressive filters
-GET /query/filter-events?ratio_gt=0.9
-
-Finds steps where > 90% of candidates were deleted.
+```GET /query/filter-events```
+Finds steps where > 80% of candidates were deleted.
 
 ### Weak filters (almost no filtering)
-GET /query/weak-filters?ratio_lt=0.2
-
+```GET /query/weak-filters?ratio_lt=0.2```
 Reveals potential recall problems.
 
 ### Failure mode analysis
-GET /query/failures?mode=llm_keyword_drift
+```GET /query/failures```
 
 Used for reliability triage.
 
@@ -244,8 +245,8 @@ This framework generalizes across all of them.
 
 ## Conclusion
 
-This X-Ray system bridges the missing layer between  
-traditional tracing and real-world decision debugging.
+This X-Ray system adds the missing layer between tracing and debugging.
+It explains decision reasoning, not just execution flow — making non-deterministic pipelines observable, explainable, and debuggable.
 
 It enables engineers to answer not just:
 
